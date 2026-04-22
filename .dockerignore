@@ -1,0 +1,42 @@
+# Dependencias y artefactos que se reconstruyen dentro del contenedor
+node_modules
+npm-debug.log*
+
+# Variables de entorno locales (NUNCA dentro de la imagen)
+.env
+.env.*
+!.env.example
+
+# Git, editores y SO
+.git
+.gitignore
+.gitattributes
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Documentación y metadatos
+*.md
+!README.md
+EJERCICIO.md
+FEEBACK.txt
+CLAUDE.md
+
+# Tests y cobertura (no van a la imagen de producción)
+tests
+coverage
+.nyc_output
+jest.config.js
+
+# Archivos Docker / compose
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github
+
+# Migraciones de Prisma se incluyen (forma parte del bundle de prisma/),
+# excepto los binarios cacheados de prisma local.
+prisma/migrations/_*.sql
