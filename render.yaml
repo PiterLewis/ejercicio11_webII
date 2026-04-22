@@ -1,0 +1,41 @@
+# render.yaml — Infrastructure as Code para Render.com
+# Crea un web service Docker + una BD Postgres free tier.
+
+services:
+  - type: web
+    name: biblioteca-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: frankfurt
+    branch: main
+    healthCheckPath: /api/health
+    autoDeploy: true
+    preDeployCommand: npx prisma migrate deploy
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: HOST
+        value: 0.0.0.0
+      - key: LOG_LEVEL
+        value: info
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 2h
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: biblioteca-db
+          property: connectionString
+
+databases:
+  - name: biblioteca-db
+    databaseName: biblioteca
+    user: biblioteca
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: 16
