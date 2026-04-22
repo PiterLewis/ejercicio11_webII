@@ -71,7 +71,7 @@ ejercicio11_webII_SGD/
 ```bash
 npm install
 cp .env.example .env
-# Edita .env con tu DATABASE_URL local o de Supabase
+# Edita .env con tu DATABASE_URL y DIRECT_URL (Supabase o Postgres local)
 
 npm run db:migrate:dev     # primera vez
 npm run dev
@@ -80,6 +80,12 @@ npm run dev
 - API:        http://localhost:3000/api
 - Swagger:    http://localhost:3000/api-docs
 - Health:     http://localhost:3000/api/health
+
+> **Supabase (proveedor de BD del curso, T9):** en *Settings → Database* tienes
+> dos cadenas de conexión. Usa el puerto **5432** para `DATABASE_URL` (conexión
+> directa) y el puerto **6543** para `DIRECT_URL` (Supavisor / pooling). Prisma
+> necesita ambas: `directUrl` se usa al aplicar migraciones porque el pooler no
+> soporta *prepared statements*.
 
 ## Inicio rápido con Docker Compose
 
@@ -116,8 +122,8 @@ obligatoria, el proceso aborta con mensaje claro.
 | `NODE_ENV` | enum | `development` | `development` \| `production` \| `test` |
 | `PORT` | number | `3000` | |
 | `HOST` | string | `0.0.0.0` | |
-| `DATABASE_URL` | string | — | Obligatoria. URL Postgres |
-| `DIRECT_URL` | string | — | Opcional (Supabase) |
+| `DATABASE_URL` | string | — | Obligatoria. Postgres runtime (Supavisor 6543 en Supabase) |
+| `DIRECT_URL` | string | — | Obligatoria para `prisma migrate` (puerto 5432 en Supabase) |
 | `JWT_SECRET` | string | — | Obligatoria. Mín. 32 caracteres |
 | `JWT_EXPIRES_IN` | string | `2h` | |
 | `LOG_LEVEL` | enum | `info` | `fatal\|error\|warn\|info\|debug\|trace\|silent` |
@@ -193,15 +199,31 @@ Secrets requeridos en *Settings → Secrets and variables → Actions*:
 |--------|----------|
 | `RAILWAY_TOKEN` | Token de despliegue Railway |
 
+## Base de datos en producción: Supabase
+
+El curso (T9) usa **Supabase** como proveedor de PostgreSQL gestionado. Pasos:
+
+1. Crear proyecto en [supabase.com](https://supabase.com) (región `eu-west` o cercana).
+2. En *Settings → Database → Connection string* hay dos cadenas:
+   - `URI` con puerto 5432 es la conexión directa. Se pone en `DATABASE_URL`.
+   - `Pooling` con puerto 6543 es Supavisor. Se pone en `DIRECT_URL`.
+   El pooler no soporta *prepared statements*, por eso Prisma reserva
+   `directUrl` para `prisma migrate`.
+3. Inyectar `DATABASE_URL`, `DIRECT_URL` y `JWT_SECRET` en la plataforma de despliegue
+   (ver secciones de Railway, Render o Fly.io más abajo).
+
 ## Despliegue en Railway
 
 1. Crear cuenta en [railway.app](https://railway.app) y nuevo proyecto desde el repo.
-2. *New → Database → PostgreSQL*. Railway inyecta `DATABASE_URL` automáticamente.
-3. *Variables*: añadir `JWT_SECRET` (≥32 caracteres) y opcionalmente `JWT_EXPIRES_IN`,
-   `LOG_LEVEL`, `CORS_ORIGIN`.
-4. Railway detecta el `Dockerfile` y `railway.json`. El `startCommand` aplica
+2. *Variables*: añadir `DATABASE_URL` y `DIRECT_URL` (de Supabase), `JWT_SECRET`
+   (≥32 caracteres) y opcionalmente `JWT_EXPIRES_IN`, `LOG_LEVEL`, `CORS_ORIGIN`.
+3. Railway detecta el `Dockerfile` y `railway.json`. El `startCommand` aplica
    migraciones (`prisma migrate deploy`) antes de arrancar.
-5. *Settings → Networking → Generate Domain* → URL pública.
+4. *Settings → Networking → Generate Domain* → URL pública.
+
+> Railway también puede crear su propio Postgres (*New → Database → PostgreSQL*)
+> si prefieres no usar Supabase; en ese caso apunta `DATABASE_URL` y `DIRECT_URL`
+> a la misma URL que inyecta Railway (no hay pooler separado).
 
 ```bash
 curl https://<app>.up.railway.app/api/health
@@ -213,18 +235,25 @@ curl https://<app>.up.railway.app/api/health
 Con `render.yaml` (Infrastructure as Code) ya definido:
 
 1. Conectar repo en [render.com](https://render.com) → *New → Blueprint*.
-2. Render lee `render.yaml`, crea el web service Docker y la BD Postgres free.
-3. `JWT_SECRET` se autogenera (`generateValue: true`).
-4. `preDeployCommand: npx prisma migrate deploy` corre antes de cada deploy.
+2. Render lee `render.yaml` y crea el web service Docker.
+3. Añadir manualmente `DATABASE_URL` y `DIRECT_URL` (de Supabase) como secrets
+   en *Environment* antes del primer deploy.
+4. `JWT_SECRET` se autogenera (`generateValue: true`).
+5. `preDeployCommand: npx prisma migrate deploy` corre antes de cada deploy
+   (usa `DIRECT_URL`, así que debe apuntar al puerto 5432 de Supabase).
 
 ## Despliegue en Fly.io
 
 ```bash
 fly auth login
 fly launch --no-deploy        # ajusta el nombre si "biblioteca-api" está cogido
-fly postgres create --name biblioteca-db --region mad
-fly postgres attach biblioteca-db          # inyecta DATABASE_URL
-fly secrets set JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")
+
+# Inyectar URLs de Supabase y JWT_SECRET como secrets
+fly secrets set \
+  DATABASE_URL="postgresql://postgres:[PASSWORD]@db.xxxx.supabase.co:5432/postgres" \
+  DIRECT_URL="postgresql://postgres:[PASSWORD]@db.xxxx.supabase.co:6543/postgres" \
+  JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")
+
 fly deploy
 fly status
 fly open

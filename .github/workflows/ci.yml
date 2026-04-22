@@ -42,6 +42,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://biblioteca:biblioteca@localhost:5432/biblioteca_test?schema=public
+      DIRECT_URL: postgresql://biblioteca:biblioteca@localhost:5432/biblioteca_test
       JWT_SECRET: test_secret_de_al_menos_32_caracteres_para_ci_pipeline
       JWT_EXPIRES_IN: 1h
       NODE_ENV: test
