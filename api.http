@@ -1,0 +1,196 @@
+### API Biblioteca Digital — REST Client Tests
+### Usar con extensión REST Client de VS Code
+
+@baseUrl = http://localhost:3000/api
+@token = PEGA_TU_TOKEN_AQUI
+
+### Auth
+
+### Registrar usuario
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "María García",
+  "email": "maria@ejemplo.com",
+  "password": "MiPassword123!"
+}
+
+###
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "maria@ejemplo.com",
+  "password": "MiPassword123!"
+}
+
+###
+
+### Login Admin (del seed)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@biblioteca.com",
+  "password": "Admin1234!"
+}
+
+###
+
+### Login Bibliotecario (del seed)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "librarian@biblioteca.com",
+  "password": "Librarian1234!"
+}
+
+###
+
+### Obtener mi perfil
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### Libros
+
+###
+
+### Listar libros (público)
+GET {{baseUrl}}/books
+
+###
+
+### Listar libros con filtros
+GET {{baseUrl}}/books?genre=Fantasía&available=true&page=1&limit=5
+
+###
+
+### Obtener libro por ID
+GET {{baseUrl}}/books/1
+
+###
+
+### Crear libro (requiere LIBRARIAN o ADMIN)
+POST {{baseUrl}}/books
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "isbn": "978-84-376-0494-7",
+  "title": "Don Quijote de la Mancha",
+  "author": "Miguel de Cervantes",
+  "genre": "Clásico",
+  "description": "La obra más importante de la literatura española.",
+  "publishedYear": 1605,
+  "copies": 4
+}
+
+###
+
+### Actualizar libro (requiere LIBRARIAN o ADMIN)
+PUT {{baseUrl}}/books/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Don Quijote de la Mancha (Edición actualizada)",
+  "copies": 6
+}
+
+###
+
+### Eliminar libro (requiere ADMIN)
+DELETE {{baseUrl}}/books/1
+Authorization: Bearer {{token}}
+
+### Préstamos
+
+###
+
+### Solicitar préstamo
+POST {{baseUrl}}/loans
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "bookId": 1
+}
+
+###
+
+### Mis préstamos
+GET {{baseUrl}}/loans
+Authorization: Bearer {{token}}
+
+###
+
+### Todos los préstamos (LIBRARIAN/ADMIN)
+GET {{baseUrl}}/loans/all
+Authorization: Bearer {{token}}
+
+###
+
+### Todos los préstamos con filtro de estado
+GET {{baseUrl}}/loans/all?status=ACTIVE&page=1&limit=10
+Authorization: Bearer {{token}}
+
+###
+
+### Devolver libro
+PUT {{baseUrl}}/loans/1/return
+Authorization: Bearer {{token}}
+
+### Reseñas
+
+###
+
+### Reseñas de un libro (público)
+GET {{baseUrl}}/books/1/reviews
+
+###
+
+### Crear reseña (solo si has devuelto el libro)
+POST {{baseUrl}}/books/1/reviews
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "rating": 5,
+  "comment": "Excelente libro, muy recomendable."
+}
+
+###
+
+### Eliminar reseña
+DELETE {{baseUrl}}/reviews/1
+Authorization: Bearer {{token}}
+
+### Estadísticas
+
+###
+
+### Estadísticas generales (LIBRARIAN/ADMIN)
+GET {{baseUrl}}/stats
+Authorization: Bearer {{token}}
+
+###
+
+### Marcar préstamos vencidos y obtener lista (LIBRARIAN/ADMIN)
+PUT {{baseUrl}}/stats/overdue
+Authorization: Bearer {{token}}
+
+### Health
+
+###
+
+### Health check (con ping a BD)
+GET http://localhost:3000/api/health
+
+###
+
+### Readiness probe
+GET http://localhost:3000/api/ready
