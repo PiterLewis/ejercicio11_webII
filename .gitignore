@@ -24,3 +24,8 @@ Thumbs.db
 
 # Prisma local
 prisma/.env
+
+# Material del enunciado y feedback (no parte del proyecto)
+EJERCICIO.md
+FEEBACK.txt
+CLAUDE.md
