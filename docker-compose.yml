@@ -1,0 +1,58 @@
+# docker-compose.yml — Stack de desarrollo: API + PostgreSQL
+# Levanta toda la aplicación con `docker compose up --build`.
+# Para entornos CI/cloud se usa solo el Dockerfile (compose es para dev local).
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: biblioteca-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://biblioteca:biblioteca@db:5432/biblioteca?schema=public
+      JWT_SECRET: dev_secret_no_usar_en_produccion_cambia_esto_32chars
+      JWT_EXPIRES_IN: 2h
+      LOG_LEVEL: debug
+      CORS_ORIGIN: "*"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - biblioteca-net
+    # Migraciones automáticas al arrancar en dev. En producción
+    # usar un job aparte (`prisma migrate deploy`).
+    command: sh -c "npx prisma migrate deploy && node src/index.js"
+
+  db:
+    image: postgres:16-alpine
+    container_name: biblioteca-db
+    environment:
+      POSTGRES_USER: biblioteca
+      POSTGRES_PASSWORD: biblioteca
+      POSTGRES_DB: biblioteca
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U biblioteca -d biblioteca"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - biblioteca-net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  biblioteca-net:
+    driver: bridge
