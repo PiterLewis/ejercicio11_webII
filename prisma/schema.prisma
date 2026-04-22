@@ -1,4 +1,4 @@
-// Prisma Schema - Ejercicio 9: Biblioteca Digital
+// Schema de Prisma para la biblioteca digital.
 // Documentación: https://pris.ly/d/prisma-schema
 
 generator client {

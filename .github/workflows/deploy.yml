@@ -1,7 +1,7 @@
 # .github/workflows/deploy.yml — Despliegue a Railway tras un CI verde en main.
 # Requiere el secret RAILWAY_TOKEN configurado en Settings → Secrets → Actions.
 
-name: Deploy to Railway
+name: Despliegue en Railway
 
 on:
   workflow_run:
@@ -10,19 +10,19 @@ on:
     types: [completed]
 
 jobs:
-  deploy:
-    name: Railway deploy
+  desplegar:
+    name: Desplegar en Railway
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: production
-      url: ${{ steps.deploy.outputs.url }}
+      url: ${{ steps.desplegar.outputs.url }}
 
     steps:
-      - name: Checkout
+      - name: Descargar código
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -30,15 +30,15 @@ jobs:
       - name: Instalar Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Deploy
-        id: deploy
+      - name: Desplegar a Railway
+        id: desplegar
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           railway up --service biblioteca-api --detach
           echo "url=https://biblioteca-api.up.railway.app" >> "$GITHUB_OUTPUT"
 
-      - name: Smoke test
+      - name: Smoke test contra /api/health
         run: |
           for i in 1 2 3 4 5; do
             if curl -fsS https://biblioteca-api.up.railway.app/api/health; then
@@ -46,4 +46,4 @@ jobs:
             fi
             echo "Esperando despliegue ($i/5)..."; sleep 15
           done
-          echo "Health check falló tras 5 intentos"; exit 1
+          echo "El health check falló tras 5 intentos"; exit 1

@@ -1,9 +1,9 @@
-# Ejercicio 11 — Deploy & DevOps
+# Ejercicio 11 — Despliegue y DevOps
 
 API REST de **Biblioteca Digital** (basada en el ejercicio 9, T9) preparada para producción:
 **Docker** multi-stage, **docker-compose** para desarrollo, **GitHub Actions** para CI/CD,
-configuración para **Railway / Render / Fly.io**, **healthchecks**, logging estructurado
-con **Pino** y graceful shutdown.
+configuración para **Railway / Render / Fly.io**, *healthchecks*, registro de logs estructurado
+con **Pino** y apagado controlado (*graceful shutdown*).
 
 ## Stack
 
@@ -18,16 +18,16 @@ con **Pino** y graceful shutdown.
 | Docs | Swagger (swagger-jsdoc + swagger-ui-express) |
 | Tests | Jest + Supertest (servicio Postgres en CI) |
 | Contenedores | Docker multi-stage + docker compose |
-| CI/CD | GitHub Actions (matrix Node 20/22, GHCR) |
-| Deploy | Railway · Render · Fly.io |
+| CI/CD | GitHub Actions (matriz Node 20/22, GHCR) |
+| Despliegue | Railway · Render · Fly.io |
 
 ## Estructura
 
 ```
 ejercicio11_webII_SGD/
 ├── .github/workflows/
-│   ├── ci.yml              # tests + build/push GHCR
-│   └── deploy.yml          # deploy a Railway tras CI verde
+│   ├── ci.yml              # tests + construir/publicar imagen en GHCR
+│   └── deploy.yml          # despliegue a Railway tras CI verde
 ├── prisma/
 │   ├── schema.prisma
 │   ├── migrations/
@@ -66,7 +66,7 @@ ejercicio11_webII_SGD/
 └── README.md
 ```
 
-## Quickstart local (sin Docker)
+## Inicio rápido local (sin Docker)
 
 ```bash
 npm install
@@ -81,7 +81,7 @@ npm run dev
 - Swagger:    http://localhost:3000/api-docs
 - Health:     http://localhost:3000/api/health
 
-## Quickstart con Docker Compose
+## Inicio rápido con Docker Compose
 
 Levanta API + Postgres con un solo comando:
 
@@ -146,7 +146,7 @@ logger.error({ err }, 'fallo al hacer Y');
 
 `requestLogger` registra cada petición HTTP con método, ruta, status, duración e IP.
 
-## Graceful shutdown
+## Apagado controlado (graceful shutdown)
 
 `src/index.js` escucha `SIGINT`/`SIGTERM`, drena el server HTTP, cierra Prisma y
 sale con código 0. Si tarda más de 10 s, fuerza la salida con código 1.
@@ -155,10 +155,10 @@ El Dockerfile usa `tini` como PID 1 para reenviar correctamente las señales.
 ## Docker (sin compose)
 
 ```bash
-# Build
+# Construir
 docker build -t biblioteca-api .
 
-# Run (Postgres aparte; pasa .env al contenedor)
+# Ejecutar (Postgres aparte; pasa .env al contenedor)
 docker run --rm -p 3000:3000 --env-file .env biblioteca-api
 ```
 
@@ -193,7 +193,7 @@ Secrets requeridos en *Settings → Secrets and variables → Actions*:
 |--------|----------|
 | `RAILWAY_TOKEN` | Token de despliegue Railway |
 
-## Deploy en Railway
+## Despliegue en Railway
 
 1. Crear cuenta en [railway.app](https://railway.app) y nuevo proyecto desde el repo.
 2. *New → Database → PostgreSQL*. Railway inyecta `DATABASE_URL` automáticamente.
@@ -208,7 +208,7 @@ curl https://<app>.up.railway.app/api/health
 # { "status": "ok", "database": "connected", ... }
 ```
 
-## Deploy en Render
+## Despliegue en Render
 
 Con `render.yaml` (Infrastructure as Code) ya definido:
 
@@ -217,7 +217,7 @@ Con `render.yaml` (Infrastructure as Code) ya definido:
 3. `JWT_SECRET` se autogenera (`generateValue: true`).
 4. `preDeployCommand: npx prisma migrate deploy` corre antes de cada deploy.
 
-## Deploy en Fly.io
+## Despliegue en Fly.io
 
 ```bash
 fly auth login
