@@ -1,0 +1,3 @@
+# Scripts de shell siempre con LF, incluso en Windows.
+# Con CRLF, el contenedor Alpine falla con "/bin/sh^M: not found".
+*.sh text eol=lf
