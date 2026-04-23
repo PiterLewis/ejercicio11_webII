@@ -46,6 +46,10 @@ COPY --from=build --chown=nodeapp:nodejs /app/node_modules ./node_modules
 COPY --from=build --chown=nodeapp:nodejs /app/prisma ./prisma
 COPY --chown=nodeapp:nodejs package*.json ./
 COPY --chown=nodeapp:nodejs src ./src
+COPY --chown=nodeapp:nodejs scripts ./scripts
+
+# Permisos de ejecución del entrypoint (git en Windows no preserva +x).
+RUN chmod +x /app/scripts/entrypoint.sh
 
 USER nodeapp
 
@@ -62,5 +66,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 
 # tini como PID 1 reenvía señales correctamente (importante para SIGTERM
 # en Kubernetes / Railway / Fly y el graceful shutdown).
+# El entrypoint.sh aplica migraciones y hace exec del proceso Node.
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node", "src/index.js"]
+CMD ["/app/scripts/entrypoint.sh"]
