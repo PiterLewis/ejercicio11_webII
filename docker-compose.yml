@@ -27,9 +27,8 @@ services:
     restart: unless-stopped
     networks:
       - biblioteca-net
-    # Migraciones automáticas al arrancar en dev. En producción
-    # usar un job aparte (`prisma migrate deploy`).
-    command: sh -c "npx prisma migrate deploy && node src/index.js"
+    # No se sobreescribe el command: el Dockerfile usa scripts/entrypoint.sh,
+    # que aplica migraciones y arranca la API con exec (tini como PID 1).
 
   db:
     image: postgres:16-alpine
