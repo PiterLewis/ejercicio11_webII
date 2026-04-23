@@ -1,5 +1,4 @@
 ### API Biblioteca Digital — REST Client Tests
-### Usar con extensión REST Client de VS Code
 
 @baseUrl = http://localhost:3000/api
 @token = PEGA_TU_TOKEN_AQUI
