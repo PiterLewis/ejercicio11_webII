@@ -17,15 +17,12 @@ jobs:
     name: Comprobar /api/health en producción
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    environment:
-      name: production
-      url: ${{ env.RAILWAY_URL }}
 
     env:
-      # Se define como "Repository variable" en GitHub
-      # (Settings, Secrets and variables, Actions, Variables), con el
+      # Se define como "Repository secret" en GitHub
+      # (Settings, Secrets and variables, Actions, Secrets), con el
       # dominio público que Railway asigna al servicio en Settings, Networking.
-      RAILWAY_URL: ${{ vars.RAILWAY_URL }}
+      RAILWAY_URL: ${{ secrets.RAILWAY_URL }}
 
     steps:
       - name: Verificar que RAILWAY_URL está definida

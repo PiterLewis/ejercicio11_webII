@@ -200,11 +200,11 @@ No se necesitan secrets adicionales de Railway para este flujo (el Project
 Token no está disponible en el plan Trial). La autenticación con GitHub la
 gestiona Railway en su propia integración.
 
-Sí hace falta una **repository variable** en *Settings → Secrets and
-variables → Actions → Variables*:
+Sí hace falta un **repository secret** en *Settings → Secrets and
+variables → Actions → Secrets*:
 
-| Variable | Valor |
-|----------|-------|
+| Secret | Valor |
+|--------|-------|
 | `RAILWAY_URL` | URL pública completa del servicio, p. ej. `https://biblioteca-api-production-ab12.up.railway.app` |
 
 Se obtiene en Railway: *Service → Settings → Networking → Public Networking*.
