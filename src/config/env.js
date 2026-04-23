@@ -8,7 +8,13 @@ const envSchema = z.object({
     .default('development'),
 
   PORT: z.coerce.number().int().positive().default(3000),
-  HOST: z.string().default('0.0.0.0'),
+  // Acepta "0.0.0.0", "::" o "[::]" (forma de URL con corchetes, tal como
+  // Railway lo inyecta a veces). Los corchetes se eliminan porque
+  // server.listen() no los admite y daría "ENOTFOUND [::]".
+  HOST: z
+    .string()
+    .default('0.0.0.0')
+    .transform((h) => h.replace(/^\[|\]$/g, '')),
 
   DATABASE_URL: z
     .string()

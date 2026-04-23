@@ -200,27 +200,44 @@ No se necesitan secrets adicionales de Railway para este flujo (el Project
 Token no está disponible en el plan Trial). La autenticación con GitHub la
 gestiona Railway en su propia integración.
 
+Sí hace falta una **repository variable** en *Settings → Secrets and
+variables → Actions → Variables*:
+
+| Variable | Valor |
+|----------|-------|
+| `RAILWAY_URL` | URL pública completa del servicio, p. ej. `https://biblioteca-api-production-ab12.up.railway.app` |
+
+Se obtiene en Railway: *Service → Settings → Networking → Public Networking*.
+
 ## Base de datos en producción: Supabase
 
 El curso (T9) usa **Supabase** como proveedor de PostgreSQL gestionado. Pasos:
 
 1. Crear proyecto en [supabase.com](https://supabase.com) (región `eu-west` o cercana).
-2. En *Settings → Database → Connection string* hay dos cadenas:
-   - `URI` con puerto 5432 es la conexión directa. Se pone en `DATABASE_URL`.
-   - `Pooling` con puerto 6543 es Supavisor. Se pone en `DIRECT_URL`.
-   El pooler no soporta *prepared statements*, por eso Prisma reserva
-   `directUrl` para `prisma migrate`.
+2. En *Project Settings → Database → Connection string* hay dos modos:
+   - **Transaction pooler** (puerto **6543**, hostname `aws-*.pooler.supabase.com`):
+     PgBouncer en modo transacción. Se usa en runtime como `DATABASE_URL`.
+     Requiere `?pgbouncer=true` en la URL para que Prisma desactive los
+     *prepared statements* y no reviente con `42P05 prepared statement "s0"
+     already exists`.
+   - **Session / Direct** (puerto **5432**): conexión que sí mantiene
+     estado de sesión. Se usa como `DIRECT_URL` para `prisma migrate deploy`.
 3. Inyectar `DATABASE_URL`, `DIRECT_URL` y `JWT_SECRET` en la plataforma de despliegue
    (ver secciones de Railway, Render o Fly.io más abajo).
 
 ## Despliegue en Railway
 
-1. Crear cuenta en [railway.app](https://railway.app) y nuevo proyecto desde el repo.
-2. *Variables*: añadir `DATABASE_URL` y `DIRECT_URL` (de Supabase), `JWT_SECRET`
-   (≥32 caracteres) y opcionalmente `JWT_EXPIRES_IN`, `LOG_LEVEL`, `CORS_ORIGIN`.
-3. Railway detecta el `Dockerfile` y `railway.json`. El `startCommand` aplica
-   migraciones (`prisma migrate deploy`) antes de arrancar.
-4. *Settings → Networking → Generate Domain* → URL pública.
+1. Crear cuenta en [railway.app](https://railway.app) y nuevo proyecto desde el repo
+   (*Deploy from GitHub repo*), así queda activa la integración que redespliega
+   en cada push a `main`.
+2. *Variables*: añadir `DATABASE_URL` (pooler 6543 con `?pgbouncer=true`),
+   `DIRECT_URL` (directa 5432), `JWT_SECRET` (≥32 caracteres) y opcionalmente
+   `JWT_EXPIRES_IN`, `LOG_LEVEL`, `CORS_ORIGIN`.
+3. Railway detecta el `Dockerfile` y `railway.json`. El `CMD` del Dockerfile
+   ejecuta `scripts/entrypoint.sh`, que aplica migraciones (`prisma migrate
+   deploy`) y arranca la API con `exec node` (PID 1 correcto bajo tini).
+4. *Settings → Networking → Generate Domain* → URL pública. Copiarla como
+   variable `RAILWAY_URL` en el repo de GitHub para que funcione el smoke test.
 
 > Railway también puede crear su propio Postgres (*New → Database → PostgreSQL*)
 > si prefieres no usar Supabase; en ese caso apunta `DATABASE_URL` y `DIRECT_URL`

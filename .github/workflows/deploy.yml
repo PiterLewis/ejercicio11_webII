@@ -22,9 +22,22 @@ jobs:
       url: ${{ env.RAILWAY_URL }}
 
     env:
-      RAILWAY_URL: https://biblioteca-api.up.railway.app
+      # Se define como "Repository variable" en GitHub
+      # (Settings, Secrets and variables, Actions, Variables), con el
+      # dominio público que Railway asigna al servicio en Settings, Networking.
+      RAILWAY_URL: ${{ vars.RAILWAY_URL }}
 
     steps:
+      - name: Verificar que RAILWAY_URL está definida
+        run: |
+          if [ -z "${RAILWAY_URL}" ]; then
+            echo "Falta la variable RAILWAY_URL en el repo (Settings, Variables)."
+            echo "Debe contener la URL pública completa, por ejemplo:"
+            echo "  https://biblioteca-api-production-ab12.up.railway.app"
+            exit 1
+          fi
+          echo "URL objetivo: ${RAILWAY_URL}"
+
       - name: Esperar a que Railway termine el despliegue
         run: |
           echo "Dando tiempo a Railway para construir y publicar la nueva versión..."
