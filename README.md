@@ -190,14 +190,15 @@ Se dispara en `push` y `pull_request` sobre `main` / `develop`.
 
 ### `.github/workflows/deploy.yml`
 
-Se dispara cuando CI termina OK en `main`. Despliega a Railway con la CLI y
-hace smoke test sobre `/api/health` (5 reintentos × 15 s).
+Se dispara cuando CI termina OK en `main`. **El despliegue en sí lo realiza
+la integración nativa de Railway con GitHub**: al detectar el push a `main`,
+Railway rebuilda la imagen y redespliega automáticamente. Este workflow se
+limita a esperar ~60 s y hacer smoke test contra la URL pública en
+`/api/health` (8 reintentos × 15 s).
 
-Secrets requeridos en *Settings → Secrets and variables → Actions*:
-
-| Secret | Para qué |
-|--------|----------|
-| `RAILWAY_TOKEN` | Token de despliegue Railway |
+No se necesitan secrets adicionales de Railway para este flujo (el Project
+Token no está disponible en el plan Trial). La autenticación con GitHub la
+gestiona Railway en su propia integración.
 
 ## Base de datos en producción: Supabase
 

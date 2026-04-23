@@ -1,7 +1,10 @@
-# .github/workflows/deploy.yml — Despliegue a Railway tras un CI verde en main.
-# Requiere el secret RAILWAY_TOKEN configurado en Settings → Secrets → Actions.
+# .github/workflows/deploy.yml
+# El despliegue lo realiza la integración nativa de Railway con GitHub:
+# al hacer push a main, Railway rebuilda y redespliega automáticamente.
+# Este workflow NO lanza el deploy; solo hace un smoke test contra la URL
+# pública una vez Railway ha terminado el despliegue (health check público).
 
-name: Despliegue en Railway
+name: Smoke test tras despliegue
 
 on:
   workflow_run:
@@ -10,40 +13,33 @@ on:
     types: [completed]
 
 jobs:
-  desplegar:
-    name: Desplegar en Railway
+  smoke-test:
+    name: Comprobar /api/health en producción
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: production
-      url: ${{ steps.desplegar.outputs.url }}
+      url: ${{ env.RAILWAY_URL }}
+
+    env:
+      RAILWAY_URL: https://biblioteca-api.up.railway.app
 
     steps:
-      - name: Descargar código
-        uses: actions/checkout@v4
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Instalar Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Desplegar a Railway
-        id: desplegar
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Esperar a que Railway termine el despliegue
         run: |
-          railway up --service biblioteca-api --detach
-          echo "url=https://biblioteca-api.up.railway.app" >> "$GITHUB_OUTPUT"
+          echo "Dando tiempo a Railway para construir y publicar la nueva versión..."
+          sleep 60
 
       - name: Smoke test contra /api/health
         run: |
-          for i in 1 2 3 4 5; do
-            if curl -fsS https://biblioteca-api.up.railway.app/api/health; then
-              echo "Health OK"; exit 0
+          for i in 1 2 3 4 5 6 7 8; do
+            if curl -fsS "${RAILWAY_URL}/api/health"; then
+              echo ""
+              echo "Health OK"
+              exit 0
             fi
-            echo "Esperando despliegue ($i/5)..."; sleep 15
+            echo "Intento $i: la API aún no responde, reintentando en 15s..."
+            sleep 15
           done
-          echo "El health check falló tras 5 intentos"; exit 1
+          echo "El health check falló tras 8 intentos (~2 minutos)."
+          exit 1
